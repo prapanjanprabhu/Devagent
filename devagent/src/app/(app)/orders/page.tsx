@@ -16,7 +16,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
   const products = all<Product>("SELECT * FROM products WHERE tenant_id=? ORDER BY id", t.id), live = activeProducts(t.id);
   const orderTab = (
     <div className="card"><div className="scroll" style={{ maxHeight: "calc(100vh - 250px)" }}>
-      <table className="tbl"><thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Paid</th><th /></tr></thead><tbody>
+      <table className="tbl"><thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th colSpan={3}>Status &amp; payment</th></tr></thead><tbody>
         {orders.map((o) => (
           <tr key={o.id}><td className="num strong">{o.id}</td><td><b>{o.name || "-"}</b><div className="tiny muted">{o.phone}</div></td>
             <td className="sm">{(JSON.parse(o.items) as { name: string; qty: number }[]).map((i) => `${i.qty}× ${i.name}`).join(", ")}</td><td className="num">{o.total ?? <span className="muted">to quote</span>}</td>

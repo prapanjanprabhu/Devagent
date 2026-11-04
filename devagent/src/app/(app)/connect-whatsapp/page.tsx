@@ -31,8 +31,8 @@ export default async function Connect() {
           <p className="sm muted">Point your telephony provider&apos;s missed-call event here with header <code>x-rescue-secret</code> and body <code>{"{to, from}"}</code>.</p>
           <div className="f"><label>Webhook URL</label><div className="row"><code className="sm grow1" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{base}/api/calls/missed</code><CopyButton text={`${base}/api/calls/missed`} /></div></div>
           <Field label="Rescue number" hint="As your provider reports it"><input name="rescue_number" defaultValue={t.rescue_number ?? ""} /></Field>
-          <div style={{ marginTop: "auto" }}><button className="btn block">Save connections</button></div>
         </section>
+        <div className="row" style={{ gridColumn: "1 / -1", justifyContent: "flex-end" }}><button className="btn l">Save connections</button></div>
       </ActionForm>
       <p className="sm muted" style={{ marginTop: 12 }}>Google Calendar two-way sync is not part of this build.</p>
     </>

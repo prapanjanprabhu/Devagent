@@ -37,9 +37,10 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
                 <article key={e.id} className="kcard">
                   <div className="row between"><b className="sm">{e.name || e.phone}</b>{e.value > 0 && <span className="badge info plain">{e.value}</span>}</div>
                   <p className="sm muted">{e.summary}</p>
-                  <div className="row between"><span className="tiny muted">{e.updated_at <= stale && !["won", "lost"].includes(e.stage) ? <span className="badge warn plain">Quiet 2d+</span> : e.updated_at.slice(5, 16)}</span>
-                    <div className="row">
-                      <a className="ibtn" aria-label="Message on WhatsApp" href={`https://wa.me/${e.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi ${e.name || ""}, following up on your enquiry with ${t.name}.`)}`} target="_blank" rel="noreferrer"><Icon n="chat" className="sm" /></a>
+                  <span className="tiny muted">{e.updated_at <= stale && !["won", "lost"].includes(e.stage) ? <span className="badge warn plain">Quiet 2d+</span> : "Updated " + e.updated_at.slice(5, 16)}</span>
+                  <div className="row" style={{ justifyContent: "space-between" }}>
+                    <div className="row" style={{ flex: 1, minWidth: 0 }}>
+                      <a className="ibtn" title="Message on WhatsApp" aria-label="Message on WhatsApp" href={`https://wa.me/${e.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi ${e.name || ""}, following up on your enquiry with ${t.name}.`)}`} target="_blank" rel="noreferrer"><Icon n="chat" className="sm" /></a>
                       <ActionForm action={stageAction} className="row" success="Moved"><input type="hidden" name="id" value={e.id} />
                         {si < 3 && <button className="btn soft s" name="stage" value={STAGES[si + 1]}>{LABEL[STAGES[si + 1]]} <Icon n="arrow" className="sm" /></button>}
                         {s !== "lost" && s !== "won" && <button className="ibtn" name="stage" value="lost" aria-label="Mark lost" title="Mark lost"><Icon n="x" className="sm" /></button>}

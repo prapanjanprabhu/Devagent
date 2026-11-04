@@ -23,7 +23,7 @@ export default async function PublicPage({ params }: { params: Promise<{ tid: st
     <div className="pub">
       <aside className="pub-side">
         <div className="row"><Mark /><b style={{ fontSize: 17 }}>{t.name}</b></div>
-        <div>
+        <div className="pub-info">
           <h1 style={{ fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1 }}>Book in under a minute.</h1>
           <p style={{ color: "var(--ink-text)", marginTop: 10, maxWidth: 360 }}>Pick a service, choose a time, and you&apos;re set. We&apos;ll remind you on WhatsApp before your visit.</p>
           <div className="col" style={{ marginTop: 22, gap: 6, color: "var(--ink-text)" }}>
