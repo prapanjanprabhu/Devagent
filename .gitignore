@@ -1,0 +1,32 @@
+# Third-party reverse-engineering tool clone (REA) - not part of this project
+rea/
+
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local data and secrets (never commit)
+data/
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+
+# Stray empty lockfile at the repo root (the app's own lockfile is devagent/package-lock.json)
+/package-lock.json
+
+# Logs, OS and editor files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.claude/
