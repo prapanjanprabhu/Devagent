@@ -1,0 +1,53 @@
+# syntax=docker/dockerfile:1
+
+# ---- base: Node 22 (needs >= 22.13 for the built-in node:sqlite) ----
+FROM node:22-alpine AS base
+WORKDIR /app
+
+# ---- deps: install packages (cached until package files change) ----
+FROM base AS deps
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# ---- builder: build the Next.js app (standalone output) ----
+FROM base AS builder
+ARG GIT_SHA=dev
+ARG BUILD_TIME=unknown
+ENV NEXT_TELEMETRY_DISABLED=1 GIT_SHA=${GIT_SHA} BUILD_TIME=${BUILD_TIME}
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# ---- runner: small image, non-root user ----
+FROM base AS runner
+ARG GIT_SHA=dev
+ARG BUILD_TIME=unknown
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0 \
+    DATA_DIR=/data \
+    GIT_SHA=${GIT_SHA} \
+    BUILD_TIME=${BUILD_TIME}
+
+LABEL org.opencontainers.image.title="devagent" \
+      org.opencontainers.image.description="AI front desk for appointment businesses" \
+      org.opencontainers.image.source="https://github.com/prapanjanprabhu/Devagent" \
+      org.opencontainers.image.revision=${GIT_SHA} \
+      org.opencontainers.image.created=${BUILD_TIME}
+
+RUN addgroup -S app && adduser -S app -G app \
+    && mkdir -p /data && chown app:app /data
+
+COPY --from=builder --chown=app:app /app/.next/standalone ./
+COPY --from=builder --chown=app:app /app/.next/static ./.next/static
+COPY --from=builder --chown=app:app /app/public ./public
+
+USER app
+VOLUME ["/data"]
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1
+
+CMD ["node", "server.js"]
