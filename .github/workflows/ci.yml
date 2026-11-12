@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Cancel an older run of the same branch when a new commit arrives
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck, test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Dependency audit (production, high severity)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+  docker:
+    name: Docker build and smoke test
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: devagent:ci
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start container
+        run: docker run -d --name devagent -p 3000:3000 devagent:ci
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:3000/api/health
+          curl -fsS http://localhost:3000/api/ready
+          curl -fsS http://localhost:3000/api/version
+          curl -fsS http://localhost:3000/api/metrics | grep -q "devagent_up 1"
+          curl -fsS -o /dev/null http://localhost:3000/status
+          curl -fsS -o /dev/null http://localhost:3000/
+
+      - name: Container logs
+        if: always()
+        run: docker logs devagent
+
+      - name: Scan image for vulnerabilities (report only)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: devagent:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
