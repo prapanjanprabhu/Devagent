@@ -39,7 +39,7 @@ export async function endSession() {
 }
 
 export type Ctx = { user: { id: number; email: string; name: string }; tenant: Tenant; isAdmin: boolean };
-export async function getCtx(): Promise<Ctx | null> {
+async function getCtx(): Promise<Ctx | null> {
   const t = (await cookies()).get(COOKIE)?.value;
   if (!t) return null;
   const s = get<{ user_id: number; expires_at: number }>("SELECT user_id,expires_at FROM sessions WHERE token=?", t);

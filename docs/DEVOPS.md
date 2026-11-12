@@ -22,7 +22,6 @@ flowchart LR
 | CI | `.github/workflows/ci.yml` | Typecheck, unit tests, production build, then builds the image and calls the health endpoints inside the running container |
 | Publish | `.github/workflows/ci.yml` (job `publish`) | On `main` and `v*` tags, pushes `ghcr.io/prapanjanprabhu/devagent` with tags `latest`, the short commit and the version |
 | Release | `.github/workflows/release.yml` | A `v*` tag creates a GitHub release with auto-generated notes |
-| Updates | `.github/dependabot.yml` | Weekly PRs for npm packages, the Docker base image and the Actions |
 
 ## Run it with Docker
 

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { all, get, run, tx, tenantById, type Booking, type Hours, type Service, type Tenant } from "./db";
+import { all, get, run, tx, type Booking, type Hours, type Service, type Tenant } from "./db";
 import { notify } from "./notify";
 import { atActionCap } from "./plans";
 
@@ -12,9 +12,9 @@ const hhmm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 export const cleanPhone = (p: string) => { const t = p.trim(); return (t.startsWith("+") ? "+" : "") + t.replace(/\D/g, ""); };
 const LIVE = "('confirmed','pending_deposit','completed')";
 
-export const getService = (tenantId: string, id: number) => get<Service>("SELECT * FROM services WHERE id=? AND tenant_id=? AND active=1", id, tenantId);
+const getService = (tenantId: string, id: number) => get<Service>("SELECT * FROM services WHERE id=? AND tenant_id=? AND active=1", id, tenantId);
 export const activeServices = (tenantId: string) => all<Service>("SELECT * FROM services WHERE tenant_id=? AND active=1 ORDER BY id", tenantId);
-export const getBooking = (tenantId: string, id: number) =>
+const getBooking = (tenantId: string, id: number) =>
   get<Booking>("SELECT b.*, s.name AS service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.id=? AND b.tenant_id=?", id, tenantId);
 
 export function upsertCustomer(tenantId: string, phone: string, name: string) {
@@ -180,4 +180,3 @@ export function runSchedulers() {
     }
   }
 }
-export { tenantById };

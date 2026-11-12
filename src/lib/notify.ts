@@ -1,7 +1,7 @@
 import { get, run, tenantById } from "./db";
 
 const digits = (p: string) => p.replace(/\D/g, "");
-export const isPlaceholderPhone = (p: string) => /^0+$/.test(digits(p));
+const isPlaceholderPhone = (p: string) => /^0+$/.test(digits(p));
 
 /**
  * Queue a message for a customer. Always logged to the outbox; sent through the WhatsApp Cloud API when the
@@ -22,7 +22,7 @@ export function notify(tenantId: string, phone: string, body: string, kind: "tra
   return true;
 }
 
-export async function sendWhatsApp(phoneId: string, token: string, to: string, body: string): Promise<boolean> {
+async function sendWhatsApp(phoneId: string, token: string, to: string, body: string): Promise<boolean> {
   try {
     const res = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(phoneId)}/messages`, {
       method: "POST",

@@ -1,4 +1,4 @@
-import { all, get, run, tx, DEFAULT_HOURS, type Tenant } from "./db";
+import { run, tx, DEFAULT_HOURS, type Tenant } from "./db";
 
 export type Draft = {
   vertical: string; modules: string[]; hours?: Record<string, [string, string] | null>;
@@ -62,4 +62,3 @@ export function applyDraft(t: Tenant, d: Draft) {
     for (const a of d.answers) run("INSERT INTO knowledge(tenant_id,q,a) VALUES (?,?,?)", t.id, a.q.slice(0, 200), a.a.slice(0, 1000));
   });
 }
-export { all, get };
