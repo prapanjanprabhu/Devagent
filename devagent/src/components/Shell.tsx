@@ -7,8 +7,8 @@ import { Icon, Mark } from "./icons";
 export type NavItem = { href: string; label: string; icon: string; group: string; count?: number };
 type Cmd = { label: string; href: string; icon: string; group: string; kw?: string };
 
-export default function Shell({ nav, quick, user, plan, usage, publicUrl, logout, children }: {
-  nav: NavItem[]; quick: Cmd[]; user: string; plan: string; usage: { used: number; cap: number | null }; publicUrl: string; logout: ReactNode; children: ReactNode;
+export default function Shell({ nav, quick, user, plan, usage, publicUrl, version, logout, children }: {
+  nav: NavItem[]; quick: Cmd[]; user: string; plan: string; usage: { used: number; cap: number | null }; publicUrl: string; version: string; logout: ReactNode; children: ReactNode;
 }) {
   const path = usePathname(), router = useRouter();
   const [open, setOpen] = useState(false), [pal, setPal] = useState(false), [menu, setMenu] = useState(false);
@@ -37,6 +37,7 @@ export default function Shell({ nav, quick, user, plan, usage, publicUrl, logout
             {usage.cap ? <div className="meter"><i style={{ width: `${Math.min(100, (usage.used / usage.cap) * 100)}%` }} /></div> : null}
             <Link href="/billing" className="tiny" style={{ color: "var(--lime)", fontWeight: 700, display: "inline-block", marginTop: 8 }}>Manage plan →</Link>
           </div>
+          <Link href="/status" className="tiny" style={{ color: "#6E77A0", padding: "0 8px" }} title="System status">{version} · status ↗</Link>
           <div className="me"><span className="avatar">{user.slice(0, 1).toUpperCase()}</span><span className="grow1 strong" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user}</span>{logout}</div>
         </div>
       </aside>

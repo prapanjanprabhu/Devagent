@@ -5,6 +5,7 @@ import { nowLocal } from "@/lib/booking";
 import { PLANS, actionsThisMonth } from "@/lib/plans";
 import Shell, { type NavItem } from "@/components/Shell";
 import { Icon } from "@/components/icons";
+import { versionInfo } from "@/lib/runtime";
 import { logoutAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ];
   const cap = PLANS[t.plan].actionCap;
   return (
-    <Shell nav={nav} quick={quick} user={user.name} plan={`${PLANS[t.plan].label} plan`} usage={{ used: actionsThisMonth(t.id), cap: cap === Infinity ? null : cap }} publicUrl={`/book/${t.id}`}
+    <Shell nav={nav} quick={quick} user={user.name} plan={`${PLANS[t.plan].label} plan`} usage={{ used: actionsThisMonth(t.id), cap: cap === Infinity ? null : cap }} publicUrl={`/book/${t.id}`} version={`v${versionInfo().version} · ${versionInfo().commit.slice(0, 7)}`}
       logout={<form action={logoutAction}><button className="ibtn" aria-label="Log out" title="Log out" style={{ background: "transparent", border: "1px solid var(--ink-line)", color: "#fff" }}><Icon n="out" className="sm" /></button></form>}>
       {children}
     </Shell>
