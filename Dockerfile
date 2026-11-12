@@ -36,8 +36,11 @@ LABEL org.opencontainers.image.title="devagent" \
       org.opencontainers.image.revision=${GIT_SHA} \
       org.opencontainers.image.created=${BUILD_TIME}
 
+# npm and yarn are only needed to build; removing them from the final image drops known-vulnerable bundled packages
 RUN addgroup -S app && adduser -S app -G app \
-    && mkdir -p /data && chown app:app /data
+    && mkdir -p /data && chown app:app /data \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+              /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 COPY --from=builder --chown=app:app /app/.next/standalone ./
 COPY --from=builder --chown=app:app /app/.next/static ./.next/static
