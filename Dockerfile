@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- base: Node 22 (needs >= 22.13 for the built-in node:sqlite) ----
-FROM node:22-alpine AS base
+FROM node:25-alpine AS base
 WORKDIR /app
 
 # ---- deps: install packages (cached until package files change) ----
