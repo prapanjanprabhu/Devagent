@@ -72,10 +72,12 @@ jobs:
             if curl -fsS http://localhost:3000/api/health > /dev/null; then break; fi
             sleep 2
           done
-          curl -fsS http://localhost:3000/api/health
-          curl -fsS http://localhost:3000/api/ready
-          curl -fsS http://localhost:3000/api/version
-          curl -fsS http://localhost:3000/api/metrics | grep -q "devagent_up 1"
+          curl -fsS http://localhost:3000/api/health; echo
+          curl -fsS http://localhost:3000/api/ready; echo
+          curl -fsS http://localhost:3000/api/version; echo
+          # write to a file first: piping curl into grep -q can fail with "curl: (23)" under pipefail
+          curl -fsS http://localhost:3000/api/metrics -o metrics.txt
+          grep -q "devagent_up 1" metrics.txt
           curl -fsS -o /dev/null http://localhost:3000/status
           curl -fsS -o /dev/null http://localhost:3000/
 
@@ -83,13 +85,11 @@ jobs:
         if: always()
         run: docker logs devagent
 
+      # Runs the official Trivy image directly (no third-party action to break). Report only: it does not fail the build.
       - name: Scan image for vulnerabilities (report only)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: devagent:ci
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "0"
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.58.2 \
+            image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 --no-progress devagent:ci
 
   publish:
     name: Publish image to GHCR
