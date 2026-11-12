@@ -1,0 +1,69 @@
+# Run the app:            docker compose up -d --build
+# App + monitoring:       docker compose --profile monitoring up -d --build
+# Stop everything:        docker compose --profile monitoring down
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        GIT_SHA: ${GIT_SHA:-dev}
+        BUILD_TIME: ${BUILD_TIME:-local}
+    image: devagent:${TAG:-local}
+    container_name: devagent
+    ports:
+      - "${PORT:-3100}:3000"
+    environment:
+      BASE_URL: ${BASE_URL:-http://localhost:3100}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      WA_VERIFY_TOKEN: ${WA_VERIFY_TOKEN:-devagent-verify}
+      WA_APP_SECRET: ${WA_APP_SECRET:-}
+      RESCUE_WEBHOOK_SECRET: ${RESCUE_WEBHOOK_SECRET:-}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      DEV_BILLING: ${DEV_BILLING:-0}
+    volumes:
+      - devagent-data:/data # SQLite database lives here, survives restarts and upgrades
+    restart: unless-stopped
+
+  prometheus:
+    profiles: ["monitoring"]
+    image: prom/prometheus:v2.55.1
+    container_name: devagent-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana:11.3.0
+    container_name: devagent-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      # Demo setup: anyone on this machine can view dashboards. Turn off for a real server.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_DEFAULT_THEME: light
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  devagent-data:
+  prometheus-data:
+  grafana-data:
