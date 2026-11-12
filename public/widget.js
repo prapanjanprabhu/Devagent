@@ -6,7 +6,7 @@
   var btn = document.createElement("button");
   btn.textContent = "💬";
   btn.setAttribute("aria-label", "Chat with us");
-  btn.style.cssText = "position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;border:0;background:#4338F0;color:#fff;font-size:24px;cursor:pointer;z-index:2147483646;box-shadow:0 4px 16px rgba(0,0,0,.25)";
+  btn.style.cssText = "position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;border:0;background:#0E7C66;color:#fff;font-size:24px;cursor:pointer;z-index:2147483646;box-shadow:0 4px 16px rgba(0,0,0,.25)";
   var frame = document.createElement("iframe");
   frame.src = origin + "/embed/" + encodeURIComponent(tid);
   frame.title = "Chat";

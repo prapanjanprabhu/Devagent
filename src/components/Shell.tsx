@@ -37,7 +37,7 @@ export default function Shell({ nav, quick, user, plan, usage, publicUrl, versio
             {usage.cap ? <div className="meter"><i style={{ width: `${Math.min(100, (usage.used / usage.cap) * 100)}%` }} /></div> : null}
             <Link href="/billing" className="tiny" style={{ color: "var(--lime)", fontWeight: 700, display: "inline-block", marginTop: 8 }}>Manage plan →</Link>
           </div>
-          <Link href="/status" className="tiny" style={{ color: "#6E77A0", padding: "0 8px" }} title="System status">{version} · status ↗</Link>
+          <Link href="/status" className="tiny" style={{ color: "#6F9A8E", padding: "0 8px" }} title="System status">{version} · status ↗</Link>
           <div className="me"><span className="avatar">{user.slice(0, 1).toUpperCase()}</span><span className="grow1 strong" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user}</span>{logout}</div>
         </div>
       </aside>
