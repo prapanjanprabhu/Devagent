@@ -9,7 +9,7 @@ export function versionInfo() {
     name: pkg.name,
     version: pkg.version,
     commit: process.env.GIT_SHA || "dev",
-    builtAt: process.env.BUILD_TIME || null,
+    builtAt: Number.isNaN(Date.parse(process.env.BUILD_TIME || "")) ? null : process.env.BUILD_TIME!,
     node: process.version,
     env: process.env.NODE_ENV || "development",
     uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),

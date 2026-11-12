@@ -26,7 +26,7 @@ export default function Status() {
     <div className="centered" id="content"><AutoRefresh seconds={5} />
       <div className="card" style={{ width: "min(640px,100%)" }}>
         <div className="row between"><div className="row"><Mark /><b style={{ fontSize: 17 }}>Devagent status</b></div><span className={`badge ${ok ? "ok" : "bad"}`}>{ok ? "All systems operational" : "Degraded"}</span></div>
-        <div className="card" style={{ boxShadow: "none" }}>
+        <div className="card" style={{ boxShadow: "none", width: "100%" }}>
           {rows.map(([name, text, good]) => (
             <div key={name} className="row between" style={{ padding: "12px 16px", borderBottom: "1px solid var(--line-2)" }}><b className="sm">{name}</b><span className="row sm"><span className={`badge ${good ? "ok" : "bad"} plain`} style={{ width: 10, height: 10, padding: 0 }} />{text}</span></div>))}
         </div>

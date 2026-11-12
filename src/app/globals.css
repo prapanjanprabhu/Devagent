@@ -187,3 +187,5 @@ dialog.dlg::backdrop{background:rgba(10,15,31,.55);backdrop-filter:blur(3px)}dia
   .pub-info,.pub-side>.tiny{display:none}.pub-main{align-items:start;padding:18px 16px 96px}
 }
 .pcard .btn:disabled{opacity:1}.pcard.pop .btn:disabled{background:rgba(255,255,255,.14);color:#fff;box-shadow:none}.pcard .btn.ghost:disabled{opacity:.6}
+
+.centered .card .card{width:100%}
