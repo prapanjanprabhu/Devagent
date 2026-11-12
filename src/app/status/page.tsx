@@ -28,7 +28,7 @@ export default function Status() {
         <div className="row between"><div className="row"><Mark /><b style={{ fontSize: 17 }}>Devagent status</b></div><span className={`badge ${ok ? "ok" : "bad"}`}>{ok ? "All systems operational" : "Degraded"}</span></div>
         <div className="card" style={{ boxShadow: "none", width: "100%" }}>
           {rows.map(([name, text, good]) => (
-            <div key={name} className="row between" style={{ padding: "12px 16px", borderBottom: "1px solid var(--line-2)" }}><b className="sm">{name}</b><span className="row sm"><span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 99, flex: "none", background: good ? "var(--brand-2)" : "#D64545", boxShadow: `0 0 0 3px ${good ? "var(--brand-soft)" : "#FBE3E3"}` }} />{text}</span></div>))}
+            <div key={name} className="row between" style={{ padding: "12px 16px", borderBottom: "1px solid var(--line-2)" }}><b className="sm">{name}</b><span className="row sm"><span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 99, flex: "none", background: good ? "var(--ok)" : "#D64545", boxShadow: `0 0 0 3px ${good ? "var(--ok-soft)" : "#FBE3E3"}` }} />{text}</span></div>))}
         </div>
         <div className="bento g2">
           <div className="card stat"><span className="l">Uptime</span><span className="v num" style={{ fontSize: 20 }}>{fmt(v.uptimeSeconds)}</span></div>

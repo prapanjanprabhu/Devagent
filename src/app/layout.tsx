@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: { default: "Devagent - AI front desk for appointment businesses", template: "%s · Devagent" },
   description: "Devagent answers customers on WhatsApp and the web, books your calendar, takes deposits and sends reminders.",
 };
-export const viewport: Viewport = { themeColor: "#0B2420", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#0F1115", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
