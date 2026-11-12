@@ -249,3 +249,8 @@ section[id]{scroll-margin-top:76px}
 .centered .card .card.stat{padding:14px 16px;gap:4px}
 .centered .card .bento.g2{grid-template-columns:1fr 1fr}
 @media(max-width:560px){.centered .card{padding:20px 16px}}
+
+/* hero: floating chip and phone must sit above the dashboard mock-up, never behind it */
+.hero-art .chip-float{z-index:4;top:-26px;right:-8px}
+.hero-art .phone{z-index:3}
+.hero-art .mock{position:relative;z-index:1}
