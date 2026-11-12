@@ -1,0 +1,67 @@
+{
+  "uid": "devagent-overview",
+  "title": "Devagent overview",
+  "tags": ["devagent"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "App status", "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "up{job=\"devagent\"}" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }], "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }, "overrides": [] },
+      "options": { "colorMode": "background", "textMode": "value" }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Uptime", "gridPos": { "x": 4, "y": 0, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "devagent_uptime_seconds" }],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "id": 3, "type": "stat", "title": "Running version", "gridPos": { "x": 9, "y": 0, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "devagent_build_info", "instant": true, "format": "table" }],
+      "options": { "textMode": "name", "reduceOptions": { "values": false, "fields": "/^version$/", "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Businesses", "gridPos": { "x": 14, "y": 0, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "devagent_tenants_total" }]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Scheduler errors", "gridPos": { "x": 19, "y": 0, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "devagent_scheduler_errors_total" }],
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "options": { "colorMode": "background" }
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Bookings by status", "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "devagent_bookings_total", "legendFormat": "{{status}}" }]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Memory", "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "process_resident_memory_bytes", "legendFormat": "resident" },
+        { "refId": "B", "expr": "nodejs_heap_used_bytes", "legendFormat": "heap used" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Messages queued", "gridPos": { "x": 0, "y": 12, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "devagent_messages_total", "legendFormat": "delivered={{delivered}}" }]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Scheduler runs", "gridPos": { "x": 12, "y": 12, "w": 12, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "refId": "A", "expr": "devagent_scheduler_runs_total", "legendFormat": "runs" }]
+    }
+  ]
+}

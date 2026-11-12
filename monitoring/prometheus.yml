@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: devagent
+    metrics_path: /api/metrics
+    # If you set METRICS_TOKEN on the app, uncomment and use the same value:
+    # authorization:
+    #   type: Bearer
+    #   credentials: change-me
+    static_configs:
+      - targets: ["app:3000"]
