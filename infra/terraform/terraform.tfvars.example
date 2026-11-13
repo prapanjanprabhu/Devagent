@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars to override the defaults.
+region                      = "ap-south-1"
+node_instance_type          = "t3.medium"
+node_desired_size           = 2
+github_repo                 = "prapanjanprabhu/Devagent"
+create_github_oidc_provider = true

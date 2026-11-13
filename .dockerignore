@@ -34,3 +34,6 @@ docs
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+infra
+k8s

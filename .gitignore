@@ -27,3 +27,11 @@ Thumbs.db
 .idea/
 .vscode/
 .claude/
+
+# Terraform: never commit state (it can contain secrets) or local variable files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
