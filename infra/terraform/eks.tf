@@ -6,7 +6,7 @@ module "eks" {
   cluster_version = var.cluster_version
 
   vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets # worker nodes stay private
+  subnet_ids = module.vpc.public_subnets # no NAT gateway, so the nodes live in the public subnets (they only accept traffic the cluster allows)
 
   # kubectl from your laptop and from GitHub Actions needs the public endpoint
   cluster_endpoint_public_access = true

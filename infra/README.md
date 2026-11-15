@@ -4,8 +4,8 @@ Creates everything Devagent needs on AWS in one region (default `ap-south-1`, Mu
 
 | File | What it builds |
 |---|---|
-| `vpc.tf` | VPC, 2 public + 2 private subnets, 1 NAT gateway |
-| `eks.tf` | EKS cluster, 2 worker nodes (private subnets), EBS disk driver |
+| `vpc.tf` | VPC with 2 public subnets (no NAT gateway, to save about 33 US dollars a month) |
+| `eks.tf` | EKS cluster, 2 worker nodes (public subnets), EBS disk driver |
 | `ecr.tf` | Private Docker registry for the app image |
 | `github-oidc.tf` | Keyless login for GitHub Actions (OIDC role, main branch only) |
 | `outputs.tf` | Values you copy into GitHub and kubectl |
@@ -55,7 +55,7 @@ Push to `main`. The `deploy` job in `.github/workflows/ci.yml` builds the image,
 
 ## Cost
 
-Roughly 4 to 5 US dollars per day while it is running: EKS control plane about 2.4, two t3.medium nodes about 2.2, NAT gateway about 1.1, plus the load balancer. Destroy it when the demo is over.
+Roughly 3 to 4 US dollars per day while it is running: EKS control plane about 2.4, two t3.medium nodes about 2.2 (minus rounding), plus the load balancer and a few small items. Destroy it when the demo is over.
 
 ## Destroy it
 
