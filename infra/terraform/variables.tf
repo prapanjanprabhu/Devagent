@@ -46,6 +46,18 @@ variable "github_repo" {
   default     = "prapanjanprabhu/Devagent"
 }
 
+variable "github_owner_id" {
+  description = "Numeric GitHub id of the repo owner. New GitHub login tokens name the repo as owner@id/repo@id, so AWS must be told these ids"
+  type        = string
+  default     = "141214326"
+}
+
+variable "github_repo_id" {
+  description = "Numeric GitHub id of the repo (see github_owner_id)"
+  type        = string
+  default     = "1445270577"
+}
+
 variable "create_github_oidc_provider" {
   description = "Set to false if your AWS account already has the GitHub OIDC provider (only one is allowed per account)"
   type        = bool

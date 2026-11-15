@@ -2,6 +2,14 @@
 
 locals {
   github_oidc_url = "https://token.actions.githubusercontent.com"
+  github_owner    = split("/", var.github_repo)[0]
+  github_name     = split("/", var.github_repo)[1]
+
+  # GitHub names the workflow in two possible ways. Allow both, main branch only.
+  github_subjects = concat(
+    ["repo:${var.github_repo}:ref:refs/heads/main"],
+    var.github_owner_id != "" && var.github_repo_id != "" ? ["repo:${local.github_owner}@${var.github_owner_id}/${local.github_name}@${var.github_repo_id}:ref:refs/heads/main"] : []
+  )
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -40,7 +48,7 @@ data "aws_iam_policy_document" "github_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values   = local.github_subjects
     }
   }
 }
