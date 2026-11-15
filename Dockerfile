@@ -36,7 +36,7 @@ LABEL org.opencontainers.image.title="devagent" \
       org.opencontainers.image.created=${BUILD_TIME}
 
 # npm and yarn are only needed to build; removing them from the final image drops known-vulnerable bundled packages
-RUN addgroup -S app && adduser -S app -G app \
+RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app app \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
               /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
@@ -46,7 +46,7 @@ COPY --from=builder --chown=app:app /app/public ./public
 
 # No data volume: this container keeps nothing. All data lives in Postgres (DATABASE_URL),
 # so you can run as many copies of this image as you like.
-USER app
+USER 10001
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

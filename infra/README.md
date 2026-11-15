@@ -45,7 +45,13 @@ In the repo, go to Settings > Secrets and variables > Actions > Variables and ad
 | `EKS_CLUSTER` | `terraform output -raw cluster_name` |
 | `ECR_REPOSITORY` | `devagent` |
 
+Also add the GitHub **secret** `POSTGRES_PASSWORD` (16 or more letters and numbers). See [k8s/README.md](../k8s/README.md) for the optional secrets.
+
 No AWS access keys are stored in GitHub. The role can only be used by workflows on the `main` branch of this repo.
+
+## Deploy
+
+Push to `main`. The `deploy` job in `.github/workflows/ci.yml` builds the image, pushes it to ECR and updates the cluster. The website address is printed in the job summary.
 
 ## Cost
 
@@ -53,10 +59,11 @@ Roughly 4 to 5 US dollars per day while it is running: EKS control plane about 2
 
 ## Destroy it
 
-Delete the Kubernetes resources first. The app's load balancer is created by Kubernetes, and AWS will not delete the VPC while it still exists.
+Delete the Kubernetes resources first. The website's load balancer and the database disk are created by Kubernetes, and AWS will not delete the VPC while the load balancer still exists.
 
 ```bash
-kubectl delete -f k8s/ --ignore-not-found     # removes the load balancer and the disk
+kubectl delete namespace devagent --wait=true   # removes the load balancer and the database disk
+kubectl delete storageclass gp3
 cd infra/terraform
 terraform destroy
 ```

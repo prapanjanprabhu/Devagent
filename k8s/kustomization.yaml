@@ -1,0 +1,12 @@
+# kubectl apply -k k8s   (the deploy workflow does this for you)
+# Two things are NOT in git on purpose and are created by the workflow:
+#   - Secret    devagent-secrets  (database password and optional API keys)
+#   - ConfigMap devagent-config   (BASE_URL, which is the load balancer address)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: devagent
+resources:
+  - namespace.yaml
+  - storageclass.yaml
+  - postgres.yaml
+  - app.yaml

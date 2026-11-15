@@ -1,0 +1,123 @@
+# The website: 2 identical pods. They keep no data (everything is in Postgres), so any pod can serve any visitor.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devagent
+  labels:
+    app.kubernetes.io/name: devagent
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # start one new pod first ...
+      maxUnavailable: 0 # ... and only then stop an old one, so the site never goes down during an update
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: devagent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: devagent
+    spec:
+      terminationGracePeriodSeconds: 30
+      # Put the two pods on different nodes, so one node failing does not take the site down
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: devagent
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001 # matches the user in the Dockerfile
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: __IMAGE__ # replaced by the deploy workflow with the ECR image of the commit being deployed
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: devagent-config # BASE_URL and other settings, written by the deploy workflow
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: devagent-secrets
+                  key: DATABASE_URL
+            # Optional keys: the app works without them (rule-based chat, logged-only WhatsApp)
+            - name: ANTHROPIC_API_KEY
+              valueFrom: { secretKeyRef: { name: devagent-secrets, key: ANTHROPIC_API_KEY, optional: true } }
+            - name: WA_APP_SECRET
+              valueFrom: { secretKeyRef: { name: devagent-secrets, key: WA_APP_SECRET, optional: true } }
+            - name: RESCUE_WEBHOOK_SECRET
+              valueFrom: { secretKeyRef: { name: devagent-secrets, key: RESCUE_WEBHOOK_SECRET, optional: true } }
+            - name: METRICS_TOKEN
+              valueFrom: { secretKeyRef: { name: devagent-secrets, key: METRICS_TOKEN, optional: true } }
+          startupProbe: # give a new pod up to a minute to come up
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 3
+            failureThreshold: 20
+          readinessProbe: # traffic only goes to pods that can reach the database
+            httpGet: { path: /api/ready, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 4
+            failureThreshold: 3
+          livenessProbe: # deliberately does NOT check the database, so a database outage does not restart the website pods
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 4
+            failureThreshold: 3
+          lifecycle:
+            preStop: # let the load balancer stop sending traffic before the process exits
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              memory: 768Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devagent
+  labels:
+    app.kubernetes.io/name: devagent
+  annotations:
+    # Public AWS Network Load Balancer. Its address (…elb.amazonaws.com) is your website URL.
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /api/health
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: traffic-port
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: devagent
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+# During node maintenance Kubernetes may never take both website pods down at once
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: devagent
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: devagent

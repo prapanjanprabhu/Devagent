@@ -1,0 +1,32 @@
+name: Kubernetes check
+
+on:
+  push:
+    branches: [main]
+    paths: ["k8s/**", ".github/workflows/k8s.yml"]
+  pull_request:
+    paths: ["k8s/**", ".github/workflows/k8s.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Render and validate manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render with kustomize
+        run: kubectl kustomize k8s | sed "s#__IMAGE__#123456789012.dkr.ecr.ap-south-1.amazonaws.com/devagent:test#g" > rendered.yaml
+
+      - name: Check against the Kubernetes schemas
+        run: |
+          docker run --rm -v "$PWD/rendered.yaml:/rendered.yaml:ro" ghcr.io/yannh/kubeconform:v0.6.7 \
+            -strict -summary -kubernetes-version 1.34.0 /rendered.yaml
+
+      - name: The website must run 2 pods and the database exactly 1
+        run: |
+          grep -A3 "^kind: Deployment" rendered.yaml > /dev/null
+          test "$(grep -c '^  replicas: 2$' rendered.yaml)" = "1"
+          test "$(grep -c '^  replicas: 1$' rendered.yaml)" = "1"
