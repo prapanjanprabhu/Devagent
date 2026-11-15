@@ -1,6 +1,6 @@
 # DevOps guide
 
-How Devagent is built, tested, shipped and watched. Everything here runs on one laptop with Docker.
+How Devagent is built, tested, shipped and watched. Everything except the AWS deploy also runs on one laptop with Docker.
 
 ## The pipeline
 
@@ -12,7 +12,7 @@ flowchart LR
   D --> E[Smoke test the container]
   E --> F[Trivy image scan]
   F --> G[Publish to GHCR]
-  G --> H[docker compose pull + up]
+  F --> H[Push to ECR and deploy to EKS]
   H --> I[Prometheus scrapes /api/metrics]
   I --> J[Grafana dashboard]
 ```
@@ -21,6 +21,8 @@ flowchart LR
 |---|---|---|
 | CI | `.github/workflows/ci.yml` | Typecheck, tests (against a real Postgres), production build, then builds the image and runs two copies of it next to one database, calling the health endpoints on both |
 | Publish | `.github/workflows/ci.yml` (job `publish`) | On `main` and `v*` tags, pushes `ghcr.io/prapanjanprabhu/devagent` with tags `latest`, the short commit and the version |
+| Deploy | `.github/workflows/ci.yml` (job `deploy`) | On `main`, once AWS is set up: pushes the image to ECR, applies `k8s/` to EKS, waits for the rollout and checks the live site |
+| Checks | `.github/workflows/terraform.yml`, `k8s.yml` | Validate the Terraform and the Kubernetes manifests when they change |
 | Release | `.github/workflows/release.yml` | A `v*` tag creates a GitHub release with auto-generated notes |
 
 ## Run it with Docker
@@ -59,7 +61,7 @@ On `docker stop` the app receives SIGTERM, logs `shutting down`, and exits clean
 2. Open the app, sign up, finish onboarding, make a booking from the public page
 3. Open `/status` and watch uptime tick; open Grafana (`localhost:3001`) and watch bookings appear
 4. `docker kill devagent` and watch the status panel go red, then `docker compose up -d` brings it back and the booking is still there (data volume)
-5. Push a commit and watch the Actions run go through test, build, smoke test and publish
+5. Push a commit and watch the Actions run go through test, build, smoke test, publish and deploy
 
 ## Branch and commit style
 
@@ -67,6 +69,6 @@ Small commits, plain English, one change each. `main` is always deployable.
 
 ## What is not included (on purpose)
 
-- **No automatic deploy to a server.** CI publishes the image; to deploy, run `docker compose pull && docker compose up -d` on any machine with Docker. Adding an SSH or cloud deploy step needs your own server and secrets.
+- **No HTTPS on the cluster.** The load balancer serves plain HTTP. HTTPS needs a domain, an ACM certificate and an ingress controller.
 - **One database pod.** Postgres runs as a single instance (a single point of failure). For real production use a managed database such as AWS RDS with a standby.
 - **Prometheus metrics are business and process gauges, not per-request latency.**
