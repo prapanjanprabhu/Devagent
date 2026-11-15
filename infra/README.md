@@ -55,7 +55,7 @@ Push to `main`. The `deploy` job in `.github/workflows/ci.yml` builds the image,
 
 ## Cost
 
-Roughly 3 to 4 US dollars per day while it is running: EKS control plane about 2.4, two t3.medium nodes about 2.2 (minus rounding), plus the load balancer and a few small items. Destroy it when the demo is over.
+Roughly 5 to 6 US dollars per day while it is running (about 450 to 520 rupees): EKS control plane about 2.4, two t3.medium nodes about 2.15, the load balancer about 0.55, public IP addresses about 0.5, and disks and small items about 0.3. Billing is per hour, so destroy it as soon as the demo is over.
 
 ## Destroy it
 
