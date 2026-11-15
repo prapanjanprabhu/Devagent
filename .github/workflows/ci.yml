@@ -169,3 +169,119 @@ jobs:
             BUILD_TIME=${{ github.event.head_commit.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Builds the image, stores it in AWS ECR and updates the EKS cluster.
+  # It only runs on pushes to main, and only after AWS has been set up (see infra/README.md):
+  # until the repo variable AWS_ROLE_ARN exists, this job is skipped, so CI stays green.
+  deploy:
+    name: Deploy to AWS EKS
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # lets the job log in to AWS without stored keys
+      contents: read
+    concurrency:
+      group: deploy-eks
+      cancel-in-progress: false # never stop a deploy half way
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'devagent' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push the image to ECR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Connect kubectl to the cluster
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER" --region "$AWS_REGION"
+
+      - name: Create the namespace and the secrets
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WA_APP_SECRET: ${{ secrets.WA_APP_SECRET }}
+          RESCUE_WEBHOOK_SECRET: ${{ secrets.RESCUE_WEBHOOK_SECRET }}
+          METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
+        run: |
+          if ! [[ "$POSTGRES_PASSWORD" =~ ^[A-Za-z0-9]{16,}$ ]]; then
+            echo "::error::Add a GitHub secret named POSTGRES_PASSWORD with at least 16 letters and numbers (no symbols)."
+            exit 1
+          fi
+          kubectl apply -f k8s/namespace.yaml
+          args=(--from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD"
+                --from-literal=DATABASE_URL="postgres://devagent:${POSTGRES_PASSWORD}@postgres:5432/devagent")
+          # optional keys are only added when you have set them
+          [ -n "$ANTHROPIC_API_KEY" ] && args+=(--from-literal=ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY")
+          [ -n "$WA_APP_SECRET" ] && args+=(--from-literal=WA_APP_SECRET="$WA_APP_SECRET")
+          [ -n "$RESCUE_WEBHOOK_SECRET" ] && args+=(--from-literal=RESCUE_WEBHOOK_SECRET="$RESCUE_WEBHOOK_SECRET")
+          [ -n "$METRICS_TOKEN" ] && args+=(--from-literal=METRICS_TOKEN="$METRICS_TOKEN")
+          kubectl -n devagent create secret generic devagent-secrets "${args[@]}" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy the database and the website
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:${{ github.sha }}"
+          # BASE_URL is the load balancer address. On the very first deploy it does not exist yet.
+          HOST=$(kubectl -n devagent get svc devagent -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+          kubectl -n devagent create configmap devagent-config --from-literal=BASE_URL="http://${HOST:-localhost}" --from-literal=LOG_LEVEL=info --dry-run=client -o yaml | kubectl apply -f -
+          kubectl kustomize k8s | sed "s#__IMAGE__#${IMAGE}#g" | kubectl apply -f -
+          # wait for AWS to create the load balancer, then store its address
+          for _ in $(seq 1 60); do
+            NEW=$(kubectl -n devagent get svc devagent -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            [ -n "$NEW" ] && break
+            sleep 10
+          done
+          if [ -z "$NEW" ]; then echo "::error::The load balancer was not created in 10 minutes"; exit 1; fi
+          if [ "$NEW" != "$HOST" ]; then
+            kubectl -n devagent create configmap devagent-config --from-literal=BASE_URL="http://${NEW}" --from-literal=LOG_LEVEL=info --dry-run=client -o yaml | kubectl apply -f -
+            kubectl -n devagent rollout restart deployment/devagent
+          fi
+          echo "HOST=$NEW" >> "$GITHUB_ENV"
+
+      - name: Wait for the database and both website pods
+        run: |
+          kubectl -n devagent rollout status statefulset/postgres --timeout=300s
+          kubectl -n devagent rollout status deployment/devagent --timeout=300s
+          kubectl -n devagent get pods -o wide
+
+      - name: Check the live website
+        run: |
+          # a new load balancer can take a few minutes before its address works
+          for _ in $(seq 1 60); do
+            if curl -fsS "http://${HOST}/api/ready" > /dev/null; then break; fi
+            sleep 10
+          done
+          curl -fsS "http://${HOST}/api/ready"; echo
+          curl -fsS "http://${HOST}/api/version" | tee version.json; echo
+          grep -q "${{ github.sha }}" version.json
+          echo "Website: http://${HOST}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: What went wrong (only on failure)
+        if: failure()
+        run: |
+          kubectl -n devagent get pods,svc,pvc || true
+          kubectl -n devagent describe pods || true
+          kubectl -n devagent logs deployment/devagent --tail=50 || true
