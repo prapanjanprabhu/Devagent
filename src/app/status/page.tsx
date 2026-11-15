@@ -11,10 +11,10 @@ export const metadata = { title: "System status" };
 const fmt = (s: number) => { const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60); return `${d ? d + "d " : ""}${h || d ? h + "h " : ""}${m}m ${s % 60}s`; };
 
 /** Public, read-only health view. Shows service health only - no business data. */
-export default function Status() {
+export default async function Status() {
   const v = versionInfo();
   let db = { ok: false, ms: 0 };
-  try { const t0 = Date.now(); get("SELECT 1"); db = { ok: true, ms: Date.now() - t0 }; } catch { /* shown as down */ }
+  try { const t0 = Date.now(); await get("SELECT 1"); db = { ok: true, ms: Date.now() - t0 }; } catch { /* shown as down */ }
   const lastRun = schedulerStats.lastRun ? Math.round((Date.now() - schedulerStats.lastRun) / 1000) : null;
   const ok = db.ok && schedulerStats.errors === 0;
   const rows: [string, string, boolean][] = [

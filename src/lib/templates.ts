@@ -53,12 +53,12 @@ export function draftFromDescription(text: string): Draft {
   return { vertical: vKey, modules: v.modules, hours, services, products: v.products.map((p) => ({ ...p })), answers: [] };
 }
 
-export function applyDraft(t: Tenant, d: Draft) {
-  tx(() => {
-    run("UPDATE tenants SET vertical=?, modules=?, hours=? WHERE id=?", d.vertical, JSON.stringify(d.modules), JSON.stringify(d.hours ?? JSON.parse(t.hours) ?? DEFAULT_HOURS), t.id);
-    run("DELETE FROM services WHERE tenant_id=? AND id NOT IN (SELECT service_id FROM bookings WHERE tenant_id=?)", t.id, t.id);
-    for (const s of d.services) run("INSERT INTO services(tenant_id,name,duration_min,price,deposit,spots) VALUES (?,?,?,?,?,?)", t.id, s.name.slice(0, 80), s.duration_min, s.price, s.deposit, s.spots);
-    for (const p of d.products) run("INSERT INTO products(tenant_id,name,price,stock) VALUES (?,?,?,?)", t.id, p.name.slice(0, 80), p.price, p.stock);
-    for (const a of d.answers) run("INSERT INTO knowledge(tenant_id,q,a) VALUES (?,?,?)", t.id, a.q.slice(0, 200), a.a.slice(0, 1000));
-  });
+export async function applyDraft(t: Tenant, d: Draft) {
+  await tx(async () => {
+        await run("UPDATE tenants SET vertical=?, modules=?, hours=? WHERE id=?", d.vertical, JSON.stringify(d.modules), JSON.stringify(d.hours ?? JSON.parse(t.hours) ?? DEFAULT_HOURS), t.id);
+        await run("DELETE FROM services WHERE tenant_id=? AND id NOT IN (SELECT service_id FROM bookings WHERE tenant_id=?)", t.id, t.id);
+        for (const s of d.services) await run("INSERT INTO services(tenant_id,name,duration_min,price,deposit,spots) VALUES (?,?,?,?,?,?)", t.id, s.name.slice(0, 80), s.duration_min, s.price, s.deposit, s.spots);
+        for (const p of d.products) await run("INSERT INTO products(tenant_id,name,price,stock) VALUES (?,?,?,?)", t.id, p.name.slice(0, 80), p.price, p.stock);
+        for (const a of d.answers) await run("INSERT INTO knowledge(tenant_id,q,a) VALUES (?,?,?)", t.id, a.q.slice(0, 200), a.a.slice(0, 1000));
+      });
 }

@@ -13,8 +13,8 @@ const MODS: [string, string, string][] = [["appointments", "Bookings & appointme
 export default async function BusinessSetup({ searchParams }: { searchParams: Promise<{ drafted?: string; add?: string }> }) {
   const { tenant: t } = await requireCtx();
   const sp = await searchParams, hours = JSON.parse(t.hours) as Hours;
-  const svcs = all<Service>("SELECT * FROM services WHERE tenant_id=? ORDER BY id", t.id);
-  const packs = all<{ id: number; name: string; sessions: number; price: number }>("SELECT * FROM packs WHERE tenant_id=?", t.id);
+  const svcs = await all<Service>("SELECT * FROM services WHERE tenant_id=? ORDER BY id", t.id);
+  const packs = await all<{ id: number; name: string; sessions: number; price: number }>("SELECT * FROM packs WHERE tenant_id=?", t.id);
 
   const profile = (
     <ActionForm action={saveProfileAction} className="bento g2" success="Business profile saved">

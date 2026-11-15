@@ -8,9 +8,9 @@ import { campaignAction } from "../actions";
 
 export default async function Campaigns() {
   const { tenant: t } = await requireCtx();
-  const past = all<{ id: number; name: string; segment: string; sent: number; created_at: string }>("SELECT * FROM campaigns WHERE tenant_id=? ORDER BY id DESC LIMIT 8", t.id);
-  const cap = PLANS[t.plan].broadcastCap, used = broadcastsThisMonth(t.id);
-  const segments = (Object.keys(SEGMENTS) as Segment[]).map((k) => ({ key: k, label: SEGMENTS[k], n: segmentMembers(t.id, k).length }));
+  const past = await all<{ id: number; name: string; segment: string; sent: number; created_at: string }>("SELECT * FROM campaigns WHERE tenant_id=? ORDER BY id DESC LIMIT 8", t.id);
+  const cap = PLANS[t.plan].broadcastCap, used = await broadcastsThisMonth(t.id);
+  const segments = await Promise.all((Object.keys(SEGMENTS) as Segment[]).map(async (k) => ({ key: k, label: SEGMENTS[k], n: (await segmentMembers(t.id, k)).length })));
   return (
     <>
       <PageHeader title="Campaigns" sub="Offers, festival wishes and win-backs on WhatsApp. Customers who reply STOP are excluded." />

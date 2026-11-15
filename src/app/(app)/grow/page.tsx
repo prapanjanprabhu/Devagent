@@ -8,7 +8,7 @@ import { sendOpportunityAction } from "../actions";
 export default async function Grow() {
   const { tenant: t } = await requireCtx();
   if (!PLANS[t.plan].growth) return <><PageHeader title="Grow agent" /><Locked title="The Grow agent is part of the paid plans">Win-backs, review requests and pack reminders - drafted for you, sent from your own number.</Locked></>;
-  const ops = findOpportunities(t);
+  const ops = await findOpportunities(t);
   return (
     <>
       <PageHeader title="Grow agent" sub="Your customer list, worked for you. Review each draft, then send it in one click." />

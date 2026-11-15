@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# ---- base: Node 22 (needs >= 22.13 for the built-in node:sqlite) ----
+# ---- base: Node 22 ----
 FROM node:22-alpine AS base
 WORKDIR /app
 
@@ -26,7 +26,6 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
-    DATA_DIR=/data \
     GIT_SHA=${GIT_SHA} \
     BUILD_TIME=${BUILD_TIME}
 
@@ -38,7 +37,6 @@ LABEL org.opencontainers.image.title="devagent" \
 
 # npm and yarn are only needed to build; removing them from the final image drops known-vulnerable bundled packages
 RUN addgroup -S app && adduser -S app -G app \
-    && mkdir -p /data && chown app:app /data \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
               /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
@@ -46,8 +44,9 @@ COPY --from=builder --chown=app:app /app/.next/standalone ./
 COPY --from=builder --chown=app:app /app/.next/static ./.next/static
 COPY --from=builder --chown=app:app /app/public ./public
 
+# No data volume: this container keeps nothing. All data lives in Postgres (DATABASE_URL),
+# so you can run as many copies of this image as you like.
 USER app
-VOLUME ["/data"]
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

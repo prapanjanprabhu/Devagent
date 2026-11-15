@@ -8,7 +8,7 @@ import { ipLimitedAction } from "../login/guard";
 async function doSignup(fd: FormData) {
   "use server";
   if (await ipLimitedAction("signup", 10)) redirect("/signup?error=" + encodeURIComponent("Too many attempts. Try again later."));
-  const r = signup(String(fd.get("name") ?? ""), String(fd.get("email") ?? ""), String(fd.get("password") ?? ""));
+  const r = await signup(String(fd.get("name") ?? ""), String(fd.get("email") ?? ""), String(fd.get("password") ?? ""));
   if (!r.ok) redirect("/signup?error=" + encodeURIComponent(r.error));
   await startSession(r.userId);
   redirect("/onboarding");

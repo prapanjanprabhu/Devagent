@@ -11,13 +11,13 @@ export const metadata = { title: "Your booking" };
 /** A customer's own booking, reached through an unguessable signed link sent over WhatsApp. */
 export default async function Manage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const b = get<Booking & { service_name: string }>("SELECT b.*, s.name AS service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.token=?", token);
+  const b = await get<Booking & { service_name: string }>("SELECT b.*, s.name AS service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.token=?", token);
   if (!b) notFound();
-  const t = tenantById(b.tenant_id)!;
+  const t = (await tenantById(b.tenant_id))!;
   async function cancel() {
     "use server";
-    const cur = get<Booking>("SELECT * FROM bookings WHERE token=?", token);
-    if (cur && ["confirmed", "pending_deposit"].includes(cur.status)) setStatus(tenantById(cur.tenant_id)!, cur.id, "cancelled");
+    const cur = await get<Booking>("SELECT * FROM bookings WHERE token=?", token);
+    if (cur && ["confirmed", "pending_deposit"].includes(cur.status)) await setStatus((await tenantById(cur.tenant_id))!, cur.id, "cancelled");
     revalidatePath(`/m/${token}`);
   }
   const active = b.status === "confirmed" || b.status === "pending_deposit";

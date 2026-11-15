@@ -13,7 +13,7 @@ describe("ops endpoints", () => {
   });
 
   it("ready checks the database", async () => {
-    const res = ready();
+    const res = await ready();
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ status: "ready", checks: { database: { ok: true } } });
   });
@@ -25,7 +25,7 @@ describe("ops endpoints", () => {
   });
 
   it("metrics are in prometheus format", async () => {
-    const res = metrics(new NextRequest("http://localhost/api/metrics"));
+    const res = await metrics(new NextRequest("http://localhost/api/metrics"));
     const text = await res.text();
     expect(res.status).toBe(200);
     expect(text).toContain("# TYPE devagent_up gauge");
@@ -35,8 +35,8 @@ describe("ops endpoints", () => {
 
   it("metrics need the token when one is set", async () => {
     process.env.METRICS_TOKEN = "secret";
-    expect(metrics(new NextRequest("http://localhost/api/metrics")).status).toBe(401);
-    const ok = metrics(new NextRequest("http://localhost/api/metrics", { headers: { authorization: "Bearer secret" } }));
+    expect((await metrics(new NextRequest("http://localhost/api/metrics"))).status).toBe(401);
+    const ok = await metrics(new NextRequest("http://localhost/api/metrics", { headers: { authorization: "Bearer secret" } }));
     expect(ok.status).toBe(200);
     delete process.env.METRICS_TOKEN;
   });

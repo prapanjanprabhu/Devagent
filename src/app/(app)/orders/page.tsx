@@ -12,8 +12,8 @@ export default async function Orders({ searchParams }: { searchParams: Promise<{
   const { tenant: t } = await requireCtx();
   if (!hasModule(t, "commerce")) return <><PageHeader title="Orders" /><Locked title="Orders & products is switched off" href="/business-setup" cta="Open Business setup">Turn it on so your AI can show a catalog and take orders in chat.</Locked></>;
   const sp = await searchParams;
-  const orders = all<{ id: number; phone: string; name: string; items: string; total: number | null; status: string; paid: number; created_at: string }>("SELECT * FROM orders WHERE tenant_id=? ORDER BY id DESC LIMIT 100", t.id);
-  const products = all<Product>("SELECT * FROM products WHERE tenant_id=? ORDER BY id", t.id), live = activeProducts(t.id);
+  const orders = await all<{ id: number; phone: string; name: string; items: string; total: number | null; status: string; paid: number; created_at: string }>("SELECT * FROM orders WHERE tenant_id=? ORDER BY id DESC LIMIT 100", t.id);
+  const products = await all<Product>("SELECT * FROM products WHERE tenant_id=? ORDER BY id", t.id), live = await activeProducts(t.id);
   const orderTab = (
     <div className="card"><div className="scroll" style={{ maxHeight: "calc(100vh - 250px)" }}>
       <table className="tbl"><thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th colSpan={3}>Status &amp; payment</th></tr></thead><tbody>

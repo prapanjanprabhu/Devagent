@@ -8,15 +8,15 @@ import BookForm from "./BookForm";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ tid: string }> }): Promise<Metadata> {
-  const t = tenantById((await params).tid);
+  const t = await tenantById((await params).tid);
   return { title: t ? `Book with ${t.name}` : "Not found" };
 }
 
 export default async function PublicPage({ params }: { params: Promise<{ tid: string }> }) {
-  const t = tenantById((await params).tid);
+  const t = await tenantById((await params).tid);
   if (!t) notFound();
   const bookable = hasModule(t, "appointments") || hasModule(t, "classes");
-  const services = bookable ? activeServices(t.id) : [], products = hasModule(t, "commerce") ? activeProducts(t.id) : [];
+  const services = bookable ? await activeServices(t.id) : [], products = hasModule(t, "commerce") ? await activeProducts(t.id) : [];
   const hours = JSON.parse(t.hours) as Record<string, [string, string] | null>;
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return (

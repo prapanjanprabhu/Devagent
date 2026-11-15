@@ -9,9 +9,9 @@ export const metadata = { title: "Pay deposit" };
 
 export default async function Pay({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const b = get<Booking & { service_name: string }>("SELECT b.*, s.name AS service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.token=?", token);
+  const b = await get<Booking & { service_name: string }>("SELECT b.*, s.name AS service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.token=?", token);
   if (!b) notFound();
-  const t = tenantById(b.tenant_id)!;
+  const t = (await tenantById(b.tenant_id))!;
   return (
     <div className="centered" id="content"><div className="card">
       <div className="row"><Mark /><b>{t.name}</b></div>

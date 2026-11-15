@@ -15,14 +15,14 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const { tenant: t } = await requireCtx();
   const sp = await searchParams, now = nowLocal(), today = now.slice(0, 10);
   const day = /^\d{4}-\d{2}-\d{2}$/.test(sp.d ?? "") ? sp.d! : today;
-  const rows = all<Booking>("SELECT b.*, s.name AS service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.tenant_id=? AND b.start LIKE ? ORDER BY b.start", t.id, `${day}%`);
+  const rows = await all<Booking>("SELECT b.*, s.name AS service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.tenant_id=? AND b.start LIKE ? ORDER BY b.start", t.id, `${day}%`);
   const live = rows.filter((b) => b.status !== "cancelled");
-  const blocks = all<{ id: number; start: string; end: string; reason: string }>("SELECT * FROM blocks WHERE tenant_id=? AND start<? AND end>? ORDER BY start", t.id, `${day}T23:59`, `${day}T00:00`);
-  const waiting = all<{ c: number }>("SELECT COUNT(*) c FROM waitlist WHERE tenant_id=? AND date=? AND notified=0", t.id, day)[0].c;
+  const blocks = await all<{ id: number; start: string; end: string; reason: string }>(`SELECT * FROM blocks WHERE tenant_id=? AND start<? AND "end">? ORDER BY start`, t.id, `${day}T23:59`, `${day}T00:00`);
+  const waiting = (await all<{ c: number }>("SELECT COUNT(*) c FROM waitlist WHERE tenant_id=? AND date=? AND notified=0", t.id, day))[0].c;
   const weekStart = shift(day, -((new Date(`${day}T12:00`).getDay() + 6) % 7));
   const week = Array.from({ length: 7 }, (_, i) => shift(weekStart, i));
-  const counts = Object.fromEntries(all<{ d: string; c: number }>("SELECT substr(start,1,10) d, COUNT(*) c FROM bookings WHERE tenant_id=? AND status!='cancelled' AND start>=? AND start<=? GROUP BY d", t.id, `${week[0]}T00:00`, `${week[6]}T23:59`).map((r) => [r.d, r.c]));
-  const svcs = activeServices(t.id);
+  const counts = Object.fromEntries((await all<{ d: string; c: number }>("SELECT substr(start,1,10) d, COUNT(*) c FROM bookings WHERE tenant_id=? AND status!='cancelled' AND start>=? AND start<=? GROUP BY d", t.id, `${week[0]}T00:00`, `${week[6]}T23:59`)).map((r) => [r.d, r.c]));
+  const svcs = await activeServices(t.id);
   const label = new Date(`${day}T12:00`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
   const defaultStart = `${day >= today ? day : today}T${day === today ? (now.slice(11, 13) < "17" ? String(Number(now.slice(11, 13)) + 1).padStart(2, "0") : "09") : "09"}:00`;
   return (

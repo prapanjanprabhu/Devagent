@@ -11,21 +11,23 @@ Design basis and evidence: [docs/ANALYSIS.md](docs/ANALYSIS.md).
 ## Run with Docker
 ```
 cp .env.example .env
-docker compose up -d --build                       # app on http://localhost:3100
+docker compose up -d --build                       # Postgres + app on http://localhost:3100
 docker compose --profile monitoring up -d --build  # plus Prometheus :9090 and Grafana :3001
 ```
 Health: `/api/health`, `/api/ready`, `/api/version`, `/api/metrics`, and a live `/status` page.
 The pipeline (tests, build, Docker smoke test, publish to GHCR) and a demo script are in [docs/DEVOPS.md](docs/DEVOPS.md).
 
-## Run without Docker
+## Run without Docker for the app
+The database is Postgres, so start one first (docker compose does it in one line).
 ```
 npm install
+docker compose up -d db          # Postgres on localhost:5440
 copy .env.example .env.local     # then edit
 npm run dev -- -p 3100           # or: npm run build && npm start -- -p 3100
-npm test                         # unit tests
+npm test                         # needs the Postgres above
 npm run typecheck
 ```
-Needs Node >= 22.13 (uses built-in `node:sqlite`). Data: `./data/devagent.db` (override with `DATA_DIR`).
+Needs Node >= 20.9. All data lives in Postgres (`DATABASE_URL`), so you can run several copies of the app against one database.
 Sign up at `/signup`, describe your business at `/onboarding`, share `/book/<id>` or the widget snippet on the dashboard.
 
 ## What needs your own accounts (works without them in logged-only mode)

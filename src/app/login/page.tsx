@@ -8,7 +8,7 @@ import { ipLimitedAction } from "./guard";
 async function doLogin(fd: FormData) {
   "use server";
   if (await ipLimitedAction("login", 10)) redirect("/login?error=" + encodeURIComponent("Too many attempts. Try again in 15 minutes."));
-  const id = login(String(fd.get("email") ?? ""), String(fd.get("password") ?? ""));
+  const id = await login(String(fd.get("email") ?? ""), String(fd.get("password") ?? ""));
   if (!id) redirect("/login?error=" + encodeURIComponent("Wrong email or password."));
   await startSession(id);
   redirect("/dashboard");

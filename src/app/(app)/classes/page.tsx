@@ -11,12 +11,12 @@ import { sellPackAction } from "../actions";
 export default async function Classes() {
   const { tenant: t } = await requireCtx();
   const now = nowLocal();
-  const sittings = all<{ service_id: number; start: string; name: string; spots: number; enrolled: number }>(
-    `SELECT b.service_id, b.start, s.name, s.spots, COUNT(*) enrolled FROM bookings b JOIN services s ON s.id=b.service_id
-     WHERE b.tenant_id=? AND s.spots>1 AND b.status IN ('confirmed','pending_deposit') AND b.start>=? AND b.start<=? GROUP BY b.service_id, b.start ORDER BY b.start`, t.id, now, addMin(now, 30 * 1440));
-  const classes = all<{ id: number; name: string; duration_min: number; spots: number }>("SELECT * FROM services WHERE tenant_id=? AND spots>1 AND active=1", t.id);
-  const packs = all<{ id: number; name: string; sessions: number; price: number }>("SELECT * FROM packs WHERE tenant_id=?", t.id);
-  const held = all<{ phone: string; remaining: number; name: string; created_at: string }>("SELECT cp.phone, cp.remaining, cp.created_at, p.name FROM customer_packs cp JOIN packs p ON p.id=cp.pack_id WHERE cp.tenant_id=? AND cp.paid=1 ORDER BY cp.id DESC LIMIT 100", t.id);
+  const sittings = await all<{ service_id: number; start: string; name: string; spots: number; enrolled: number }>(
+      `SELECT b.service_id, b.start, s.name, s.spots, COUNT(*) enrolled FROM bookings b JOIN services s ON s.id=b.service_id
+     WHERE b.tenant_id=? AND s.spots>1 AND b.status IN ('confirmed','pending_deposit') AND b.start>=? AND b.start<=? GROUP BY b.service_id, b.start, s.id ORDER BY b.start`, t.id, now, addMin(now, 30 * 1440));
+  const classes = await all<{ id: number; name: string; duration_min: number; spots: number }>("SELECT * FROM services WHERE tenant_id=? AND spots>1 AND active=1", t.id);
+  const packs = await all<{ id: number; name: string; sessions: number; price: number }>("SELECT * FROM packs WHERE tenant_id=?", t.id);
+  const held = await all<{ phone: string; remaining: number; name: string; created_at: string }>("SELECT cp.phone, cp.remaining, cp.created_at, p.name FROM customer_packs cp JOIN packs p ON p.id=cp.pack_id WHERE cp.tenant_id=? AND cp.paid=1 ORDER BY cp.id DESC LIMIT 100", t.id);
   const sit = (
     <div className="card">
       <div className="card-h"><h3>Next 30 days</h3><span className="muted sm">{classes.length ? classes.map((c) => `${c.name} (${c.spots} seats)`).join(" · ") : "No classes yet"}</span></div>

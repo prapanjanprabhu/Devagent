@@ -15,7 +15,7 @@ const features: [string, string, string, boolean?][] = [
   ["chart", "Campaigns & analytics", "Segmented broadcasts with opt-out, no-show rate, revenue and a daily owner digest."],
 ];
 const prod: [string, string, string][] = [
-  ["check", "Tested on every push", "20 automated tests cover booking rules, deposits, the waitlist and reminders."],
+  ["check", "Tested on every push", "25 automated tests cover booking rules, deposits, the waitlist, reminders and two-pod safety."],
   ["grid", "Runs in Docker", "Multi-stage image, non-root user, health check and a data volume."],
   ["chart", "Observable", "Prometheus metrics, a Grafana dashboard and a live status page."],
   ["zap", "Shipped by CI", "GitHub Actions builds, smoke-tests and publishes the image."],

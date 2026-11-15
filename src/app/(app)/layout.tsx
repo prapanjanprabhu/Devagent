@@ -13,11 +13,11 @@ export const dynamic = "force-dynamic";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { tenant: t, isAdmin, user } = await requireCtx();
   if (!t.onboarded) redirect("/onboarding");
-  const c = (sql: string, ...a: any[]) => get<{ c: number }>(sql, t.id, ...a)!.c;
+  const c = async (sql: string, ...a: any[]) => (await get<{ c: number }>(sql, t.id, ...a))!.c;
   const bookable = hasModule(t, "appointments") || hasModule(t, "classes");
-  const attention = c("SELECT COUNT(*) c FROM bookings WHERE tenant_id=? AND ((status='confirmed' AND start<?) OR status='pending_deposit')", nowLocal());
-  const newOrders = c("SELECT COUNT(*) c FROM orders WHERE tenant_id=? AND status='new'");
-  const openEnq = c("SELECT COUNT(*) c FROM enquiries WHERE tenant_id=? AND stage IN ('new','contacted')");
+  const attention = await c("SELECT COUNT(*) c FROM bookings WHERE tenant_id=? AND ((status='confirmed' AND start<?) OR status='pending_deposit')", nowLocal());
+  const newOrders = await c("SELECT COUNT(*) c FROM orders WHERE tenant_id=? AND status='new'");
+  const openEnq = await c("SELECT COUNT(*) c FROM enquiries WHERE tenant_id=? AND stage IN ('new','contacted')");
   const nav: NavItem[] = [
     { href: "/dashboard", label: "Overview", icon: "home", group: "Workspace" },
     { href: "/conversations", label: "Chats", icon: "chat", group: "Workspace" },
@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ];
   const cap = PLANS[t.plan].actionCap;
   return (
-    <Shell nav={nav} quick={quick} user={user.name} plan={`${PLANS[t.plan].label} plan`} usage={{ used: actionsThisMonth(t.id), cap: cap === Infinity ? null : cap }} publicUrl={`/book/${t.id}`} version={`v${versionInfo().version} · ${versionInfo().commit.slice(0, 7)}`}
+    <Shell nav={nav} quick={quick} user={user.name} plan={`${PLANS[t.plan].label} plan`} usage={{ used: await actionsThisMonth(t.id), cap: cap === Infinity ? null : cap }} publicUrl={`/book/${t.id}`} version={`v${versionInfo().version} · ${versionInfo().commit.slice(0, 7)}`}
       logout={<form action={logoutAction}><button className="ibtn" aria-label="Log out" title="Log out" style={{ background: "transparent", border: "1px solid var(--ink-line)", color: "#fff" }}><Icon n="out" className="sm" /></button></form>}>
       {children}
     </Shell>

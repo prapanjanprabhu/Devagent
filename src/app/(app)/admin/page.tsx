@@ -6,8 +6,8 @@ import { PageHeader, Stat } from "@/components/ui";
 export default async function Admin() {
   const { isAdmin } = await requireCtx();
   if (!isAdmin) notFound(); // set ADMIN_EMAIL to the platform operator's login email
-  const rows = all<{ id: string; name: string; plan: string; vertical: string; email: string; bookings: number; created_at: string }>(
-    `SELECT t.id, t.name, t.plan, t.vertical, u.email, t.created_at, (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id=t.id) bookings FROM tenants t JOIN users u ON u.id=t.owner_id ORDER BY t.created_at DESC`);
+  const rows = await all<{ id: string; name: string; plan: string; vertical: string; email: string; bookings: number; created_at: string }>(
+      `SELECT t.id, t.name, t.plan, t.vertical, u.email, t.created_at, (SELECT COUNT(*) FROM bookings b WHERE b.tenant_id=t.id) bookings FROM tenants t JOIN users u ON u.id=t.owner_id ORDER BY t.created_at DESC`);
   return (
     <>
       <PageHeader title="Platform admin" sub="All businesses on this Devagent instance." />

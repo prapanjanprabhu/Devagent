@@ -14,7 +14,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const { tenant: t } = await requireCtx();
   if (!hasModule(t, "leadgen")) return <><PageHeader title="Pipeline" /><Locked title="Leads & enquiries is switched off" href="/business-setup" cta="Open Business setup">Turn it on so your AI captures enquiries it can&apos;t close in chat.</Locked></>;
   const sp = await searchParams;
-  const rows = all<E>("SELECT * FROM enquiries WHERE tenant_id=? ORDER BY updated_at DESC LIMIT 300", t.id);
+  const rows = await all<E>("SELECT * FROM enquiries WHERE tenant_id=? ORDER BY updated_at DESC LIMIT 300", t.id);
   const stale = new Date(Date.now() - 2 * 864e5).toISOString().replace("T", " ").slice(0, 19);
   const open = rows.filter((r) => !["won", "lost"].includes(r.stage));
   return (

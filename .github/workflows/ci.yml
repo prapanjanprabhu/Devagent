@@ -18,6 +18,23 @@ jobs:
   test:
     name: Typecheck, test and build
     runs-on: ubuntu-latest
+    # The tests run against a real Postgres, the same database the app uses in production
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: devagent
+          POSTGRES_PASSWORD: devagent
+          POSTGRES_DB: devagent
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U devagent -d devagent"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://devagent:devagent@localhost:5432/devagent
     steps:
       - uses: actions/checkout@v4
 
@@ -63,27 +80,46 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Start container
-        run: docker run -d --name devagent -p 3000:3000 devagent:ci
+      # One database and two copies of the app, like the two website pods on Kubernetes
+      - name: Start database and two app containers
+        run: |
+          docker network create ci
+          docker run -d --name db --network ci \
+            -e POSTGRES_USER=devagent -e POSTGRES_PASSWORD=devagent -e POSTGRES_DB=devagent \
+            postgres:16-alpine
+          for _ in $(seq 1 30); do
+            if docker exec db pg_isready -U devagent -d devagent > /dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          for n in 1 2; do
+            docker run -d --name devagent$n --network ci -p 300$((n-1)):3000 \
+              -e DATABASE_URL=postgres://devagent:devagent@db:5432/devagent \
+              devagent:ci
+          done
 
       - name: Smoke test
         run: |
-          for _ in $(seq 1 30); do
-            if curl -fsS http://localhost:3000/api/health > /dev/null; then break; fi
-            sleep 2
+          for port in 3000 3001; do
+            for _ in $(seq 1 30); do
+              if curl -fsS http://localhost:$port/api/health > /dev/null; then break; fi
+              sleep 2
+            done
+            curl -fsS http://localhost:$port/api/health; echo
+            curl -fsS http://localhost:$port/api/ready; echo
+            curl -fsS http://localhost:$port/api/version; echo
+            # write to a file first: piping curl into grep -q can fail with "curl: (23)" under pipefail
+            curl -fsS http://localhost:$port/api/metrics -o metrics.txt
+            grep -q "devagent_up 1" metrics.txt
+            curl -fsS -o /dev/null http://localhost:$port/status
+            curl -fsS -o /dev/null http://localhost:$port/
           done
-          curl -fsS http://localhost:3000/api/health; echo
-          curl -fsS http://localhost:3000/api/ready; echo
-          curl -fsS http://localhost:3000/api/version; echo
-          # write to a file first: piping curl into grep -q can fail with "curl: (23)" under pipefail
-          curl -fsS http://localhost:3000/api/metrics -o metrics.txt
-          grep -q "devagent_up 1" metrics.txt
-          curl -fsS -o /dev/null http://localhost:3000/status
-          curl -fsS -o /dev/null http://localhost:3000/
 
       - name: Container logs
         if: always()
-        run: docker logs devagent
+        run: |
+          docker logs devagent1
+          docker logs devagent2
+          docker logs db 2>&1 | tail -20
 
       # Runs the official Trivy image directly (no third-party action to break). Report only: it does not fail the build.
       - name: Scan image for vulnerabilities (report only)

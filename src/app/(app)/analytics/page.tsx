@@ -9,7 +9,7 @@ const Dist = ({ title, d }: { title: string; d: Record<string, number> }) => {
 
 export default async function Analytics() {
   const { tenant: t } = await requireCtx();
-  const a = analytics(t.id);
+  const a = await analytics(t.id);
   return (
     <>
       <PageHeader title="Analytics" sub="Last 30 days" />

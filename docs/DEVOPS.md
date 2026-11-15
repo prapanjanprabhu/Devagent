@@ -7,7 +7,7 @@ How Devagent is built, tested, shipped and watched. Everything here runs on one 
 ```mermaid
 flowchart LR
   A[git push] --> B[GitHub Actions CI]
-  B --> C[Typecheck + 20 tests + build]
+  B --> C[Typecheck + 25 tests + build]
   C --> D[Docker build]
   D --> E[Smoke test the container]
   E --> F[Trivy image scan]
@@ -19,7 +19,7 @@ flowchart LR
 
 | Stage | File | What it does |
 |---|---|---|
-| CI | `.github/workflows/ci.yml` | Typecheck, unit tests, production build, then builds the image and calls the health endpoints inside the running container |
+| CI | `.github/workflows/ci.yml` | Typecheck, tests (against a real Postgres), production build, then builds the image and runs two copies of it next to one database, calling the health endpoints on both |
 | Publish | `.github/workflows/ci.yml` (job `publish`) | On `main` and `v*` tags, pushes `ghcr.io/prapanjanprabhu/devagent` with tags `latest`, the short commit and the version |
 | Release | `.github/workflows/release.yml` | A `v*` tag creates a GitHub release with auto-generated notes |
 
@@ -38,7 +38,7 @@ GIT_SHA=$(git rev-parse --short HEAD) BUILD_TIME=$(date -u +%FT%TZ) docker compo
 curl localhost:3100/api/version
 ```
 
-The SQLite database lives in the `devagent-data` volume, so rebuilding or upgrading the container keeps the data.
+All data lives in Postgres (the `devagent-pg` volume). The app container keeps nothing, so rebuilding or upgrading it never touches the data, and you can run several copies of it against the same database.
 
 ## Health, status and metrics
 
@@ -68,5 +68,5 @@ Small commits, plain English, one change each. `main` is always deployable.
 ## What is not included (on purpose)
 
 - **No automatic deploy to a server.** CI publishes the image; to deploy, run `docker compose pull && docker compose up -d` on any machine with Docker. Adding an SSH or cloud deploy step needs your own server and secrets.
-- **No Kubernetes or Terraform.** One container plus a volume is enough for a single SQLite-backed instance. SQLite also means one running replica, not many.
+- **One database pod.** Postgres runs as a single instance (a single point of failure). For real production use a managed database such as AWS RDS with a standby.
 - **Prometheus metrics are business and process gauges, not per-request latency.**

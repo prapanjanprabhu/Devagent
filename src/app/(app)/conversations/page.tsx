@@ -9,11 +9,11 @@ import { replyAction } from "../actions";
 
 export default async function Conversations({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
   const { tenant: t } = await requireCtx();
-  const threads = all<{ phone: string; last: string; n: number; preview: string }>(
-    "SELECT phone, MAX(created_at) last, COUNT(*) n, (SELECT content FROM chat_messages c2 WHERE c2.tenant_id=c.tenant_id AND c2.phone=c.phone ORDER BY id DESC LIMIT 1) preview FROM chat_messages c WHERE tenant_id=? GROUP BY phone ORDER BY last DESC LIMIT 100", t.id);
+  const threads = await all<{ phone: string; last: string; n: number; preview: string }>(
+      "SELECT phone, MAX(created_at) AS last, COUNT(*) AS n, (SELECT content FROM chat_messages c2 WHERE c2.tenant_id=c.tenant_id AND c2.phone=c.phone ORDER BY id DESC LIMIT 1) AS preview FROM chat_messages c WHERE c.tenant_id=? GROUP BY c.tenant_id, c.phone ORDER BY last DESC LIMIT 100", t.id);
   const p = (await searchParams).p ?? threads[0]?.phone;
-  const msgs = p ? all<{ role: string; content: string; created_at: string }>("SELECT role,content,created_at FROM chat_messages WHERE tenant_id=? AND phone=? ORDER BY id", t.id, p) : [];
-  const out = all<{ phone: string; body: string; kind: string; delivered: number; created_at: string }>("SELECT phone,body,kind,delivered,created_at FROM outbox WHERE tenant_id=? ORDER BY id DESC LIMIT 40", t.id);
+  const msgs = p ? await all<{ role: string; content: string; created_at: string }>("SELECT role,content,created_at FROM chat_messages WHERE tenant_id=? AND phone=? ORDER BY id", t.id, p) : [];
+  const out = await all<{ phone: string; body: string; kind: string; delivered: number; created_at: string }>("SELECT phone,body,kind,delivered,created_at FROM outbox WHERE tenant_id=? ORDER BY id DESC LIMIT 40", t.id);
   const chats = (
     <div className="card chatbox">
       <div className="threads">

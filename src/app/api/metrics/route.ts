@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
 /** Prometheus text format. Set METRICS_TOKEN to require "Authorization: Bearer <token>". */
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const token = process.env.METRICS_TOKEN;
   if (token && req.headers.get("authorization") !== `Bearer ${token}`) return new NextResponse("unauthorized", { status: 401 });
 
   const v = versionInfo(), mem = process.memoryUsage();
-  const n = (sql: string) => get<{ c: number }>(sql)?.c ?? 0;
+  const n = async (sql: string) => (await get<{ c: number }>(sql))?.c ?? 0;
   const L: string[] = [];
   const metric = (name: string, help: string, type: "gauge" | "counter", rows: [string, number][]) => {
     L.push(`# HELP ${name} ${help}`, `# TYPE ${name} ${type}`);
@@ -25,12 +25,12 @@ export function GET(req: NextRequest) {
   metric("devagent_uptime_seconds", "Seconds since process start", "gauge", [["", Math.round((Date.now() - startedAt) / 1000)]]);
   metric("process_resident_memory_bytes", "Resident memory", "gauge", [["", mem.rss]]);
   metric("nodejs_heap_used_bytes", "V8 heap used", "gauge", [["", mem.heapUsed]]);
-  metric("devagent_tenants_total", "Businesses on the platform", "gauge", [["", n("SELECT COUNT(*) c FROM tenants")]]);
+  metric("devagent_tenants_total", "Businesses on the platform", "gauge", [["", await n("SELECT COUNT(*) c FROM tenants")]]);
   metric("devagent_bookings_total", "Bookings by status", "gauge",
-    all<{ status: string; c: number }>("SELECT status, COUNT(*) c FROM bookings GROUP BY status").map((r): [string, number] => [`{status="${esc(r.status)}"}`, r.c]));
-  metric("devagent_orders_total", "Orders", "gauge", [["", n("SELECT COUNT(*) c FROM orders")]]);
+    (await all<{ status: string; c: number }>("SELECT status, COUNT(*) c FROM bookings GROUP BY status")).map((r): [string, number] => [`{status="${esc(r.status)}"}`, r.c]));
+  metric("devagent_orders_total", "Orders", "gauge", [["", await n("SELECT COUNT(*) c FROM orders")]]);
   metric("devagent_messages_total", "Messages queued by delivery state", "gauge",
-    all<{ delivered: number; c: number }>("SELECT delivered, COUNT(*) c FROM outbox GROUP BY delivered").map((r): [string, number] => [`{delivered="${r.delivered ? "true" : "false"}"}`, r.c]));
+    (await all<{ delivered: number; c: number }>("SELECT delivered, COUNT(*) c FROM outbox GROUP BY delivered")).map((r): [string, number] => [`{delivered="${r.delivered ? "true" : "false"}"}`, r.c]));
   metric("devagent_scheduler_runs_total", "Scheduler ticks", "counter", [["", schedulerStats.runs]]);
   metric("devagent_scheduler_errors_total", "Scheduler ticks that failed", "counter", [["", schedulerStats.errors]]);
   metric("devagent_scheduler_last_run_timestamp_seconds", "Unix time of the last scheduler tick", "gauge", [["", schedulerStats.lastRun ? Math.round(schedulerStats.lastRun / 1000) : 0]]);

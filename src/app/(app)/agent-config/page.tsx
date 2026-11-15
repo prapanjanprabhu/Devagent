@@ -7,7 +7,7 @@ import { addAnswerAction, deleteAnswerAction } from "../actions";
 
 export default async function AgentConfig() {
   const { tenant: t } = await requireCtx();
-  const faq = all<{ id: number; q: string; a: string }>("SELECT * FROM knowledge WHERE tenant_id=? ORDER BY id", t.id);
+  const faq = await all<{ id: number; q: string; a: string }>("SELECT * FROM knowledge WHERE tenant_id=? ORDER BY id", t.id);
   const ai = !!process.env.ANTHROPIC_API_KEY;
   return (
     <>

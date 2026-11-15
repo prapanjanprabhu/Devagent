@@ -8,9 +8,9 @@ import { optOutAction } from "../actions";
 export default async function Customers({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { tenant: t } = await requireCtx();
   const q = ((await searchParams).q ?? "").trim().slice(0, 60), like = `%${q}%`;
-  const rows = all<{ phone: string; name: string; opted_in: number; total: number; done: number; noshow: number; last_visit: string | null }>(
-    `SELECT c.phone, c.name, c.opted_in, COUNT(b.id) total, COALESCE(SUM(b.status='completed'),0) done, COALESCE(SUM(b.status='no_show'),0) noshow, MAX(b.start) last_visit
-     FROM customers c LEFT JOIN bookings b ON b.tenant_id=c.tenant_id AND b.phone=c.phone WHERE c.tenant_id=? AND (c.name LIKE ? OR c.phone LIKE ?) GROUP BY c.phone ORDER BY c.created_at DESC LIMIT 300`, t.id, like, like);
+  const rows = await all<{ phone: string; name: string; opted_in: number; total: number; done: number; noshow: number; last_visit: string | null }>(
+      `SELECT c.phone, c.name, c.opted_in, COUNT(b.id) total, COUNT(b.id) FILTER (WHERE b.status='completed') AS done, COUNT(b.id) FILTER (WHERE b.status='no_show') AS noshow, MAX(b.start) last_visit
+     FROM customers c LEFT JOIN bookings b ON b.tenant_id=c.tenant_id AND b.phone=c.phone WHERE c.tenant_id=? AND (c.name ILIKE ? OR c.phone ILIKE ?) GROUP BY c.id ORDER BY c.created_at DESC LIMIT 300`, t.id, like, like);
   return (
     <>
       <PageHeader title="Customers" sub={`${rows.length} ${q ? "matching" : "in your list"} - added automatically when they book or order`}>

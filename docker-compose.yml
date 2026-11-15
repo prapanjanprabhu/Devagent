@@ -3,6 +3,25 @@
 # Stop everything:        docker compose --profile monitoring down
 
 services:
+  # The one and only database. The app itself keeps no data, so it can run as many copies as you like.
+  db:
+    image: postgres:16-alpine
+    container_name: devagent-db
+    environment:
+      POSTGRES_USER: devagent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devagent}
+      POSTGRES_DB: devagent
+    ports:
+      - "127.0.0.1:${DB_PORT:-5440}:5432" # only for running tests and npm run dev on this machine
+    volumes:
+      - devagent-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devagent -d devagent"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   app:
     build:
       context: .
@@ -14,6 +33,7 @@ services:
     ports:
       - "${PORT:-3100}:3000"
     environment:
+      DATABASE_URL: postgres://devagent:${POSTGRES_PASSWORD:-devagent}@db:5432/devagent
       BASE_URL: ${BASE_URL:-http://localhost:3100}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
@@ -23,8 +43,9 @@ services:
       RESCUE_WEBHOOK_SECRET: ${RESCUE_WEBHOOK_SECRET:-}
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       DEV_BILLING: ${DEV_BILLING:-0}
-    volumes:
-      - devagent-data:/data # SQLite database lives here, survives restarts and upgrades
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   prometheus:
@@ -64,6 +85,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  devagent-data:
+  devagent-pg:
   prometheus-data:
   grafana-data:

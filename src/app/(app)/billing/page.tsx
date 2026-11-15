@@ -13,7 +13,7 @@ const PERKS: Record<string, string[]> = {
 
 export default async function Billing() {
   const { tenant: t } = await requireCtx();
-  const demo = process.env.DEV_BILLING === "1", used = actionsThisMonth(t.id), cap = PLANS[t.plan].actionCap;
+  const demo = process.env.DEV_BILLING === "1", used = await actionsThisMonth(t.id), cap = PLANS[t.plan].actionCap;
   return (
     <>
       <PageHeader title="Plans & credits" sub={<>Current plan <b>{PLANS[t.plan].label}</b> · {used}{cap === Infinity ? "" : ` / ${cap}`} bookings & orders this month</>} />

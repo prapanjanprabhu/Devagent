@@ -4,7 +4,7 @@ import { agentReply, type Msg } from "@/lib/agent";
 import { ipOf, limited } from "@/lib/ratelimit";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ tid: string }> }) {
-  const t = tenantById((await params).tid);
+  const t = await tenantById((await params).tid);
   if (!t) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (limited(`chat:${ipOf(req)}`, 20, 60_000)) return NextResponse.json({ reply: "You're sending messages too quickly - please wait a moment." }, { status: 429 });
   const body = await req.json().catch(() => ({}));
