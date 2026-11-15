@@ -23,9 +23,9 @@ variable "az_count" {
 }
 
 variable "cluster_version" {
-  description = "Kubernetes version of the EKS cluster"
+  description = "Kubernetes version of the EKS cluster. Use a version in standard support: older ones cost about 6x more for the control plane"
   type        = string
-  default     = "1.31"
+  default     = "1.35"
 }
 
 variable "node_instance_type" {
